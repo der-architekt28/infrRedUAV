@@ -1,0 +1,221 @@
+
+corr_sensor_drift <- function(df,
+                       col_tsens,
+                       col_traw,
+                       col_time,
+                       col_lat=NULL,
+                       col_lon=NULL,
+                       method="sensor_only",
+                       fit="spline",
+                       degf=2,
+                       threshold=0.3,
+                       datetime_format) {
+
+
+  # check inputs
+
+  if(!is.data.frame(df)) {
+    stop("Error: 'df' must be provided as dataframe object.")
+  }
+
+  if(is.null(col_tsens) || is.null(col_time)) {
+    stop("Error: Arguments 'col_tsens' and 'col_time' are required.")
+  }
+
+  if(is.null(method)) {
+    stop("Error: A calculation method must be specified.")
+  }
+
+  validate_cols <- function(x, y, z) {
+    is.character(x) && is.character(y)  && is.character(z)
+  }
+
+  if(!validate_cols(col_tsens, col_time, method)) {
+    stop("Error: Arguments 'col_tsens', 'col_time' and 'method' must be of type character.")
+  }
+
+  # maybe to add: check if time is relative or absolute
+
+  # read arguments, assign variables
+
+  tsens <- df[[col_tsens]]
+  traw <- df[[col_traw]]
+  time <- as.POSIXct(df[[col_time]], format = datetime_format)
+
+  # calculate relative time
+
+  rel_time = as.numeric(difftime(
+    time,
+    min(time),
+    units = "secs"
+  ))
+
+  # function for time until stability
+
+  timespan_fun <- function(timespan) {
+    round(timespan)
+    h <- timespan %/% 3600
+    m <- (timespan %% 3600) %/% 60
+    s <- timespan %% 60
+
+    sprintf("%02d:%02d:%02d", h, m, s)
+  }
+
+  # METHOD: SENSOR ONLY
+
+  if(method == "sensor_only") {
+
+    # create new dataframe
+
+    df_sensor_only <- data.frame(x = rel_time,
+                                 y = tsens,
+                                 traw = traw,
+                                 abs_time = time)
+
+    # check if stability is reached
+
+    df_sensor_only <- df_sensor_only %>%
+      mutate(is_stable = if_else(y <= (min(y) + threshold) & y >= min(y), 1, 0))
+
+    if(sum(df_sensor_only$is_stable == 1) <= 1) {
+      stop("Error: The Sensor does not reach a stable phase. Please check your input data or consider using a higher threshold.")
+    }
+
+    if(sum(df_sensor_only$is_stable == 1) < 5) {
+      warning("Warning: Number of stable temperature recordings is below 5. Please check your input data or consider using a higher threshold.")
+    }
+
+    # calculate mean tsens during stability phase
+
+    tsens_target <- mean(df_sensor_only$y[df_sensor_only$is_stable == 1])
+
+    # check when sensor stability is reached
+
+    stabletime_abs <- df_sensor_only$abs_time[min(which(df_sensor_only$is_stable == 1))]
+
+    stabletime_rel <- df_sensor_only %>%
+      filter(abs_time == stabletime_abs) %>%
+      pull(x)
+
+    timespan_out <- timespan_fun(stabletime_rel)
+
+    message(
+      paste("Sensor stability is reached at", stabletime_abs, "after", timespan_out)
+    )
+
+    # if needed, further prepare dataframe for fitting
+
+    if(fit == "polynomial") {     # polynomial fitting
+
+      fit_poly <- lm(y ~ poly(x, degf), data = df_sensor_only)
+      pred_poly <- predict(fit_poly, newdata = list(x =  df_sensor_only$x))
+      corr_poly <- tsens_target - pred_poly
+      tnew_poly <- df_sensor_only$traw - corr_poly
+
+      df <- df %>%
+        mutate(Corr_Factor = corr_poly,
+               LST_driftcorr = tnew_poly)
+
+      return(df)
+    }
+
+    if(fit == "spline") {     # spline fitting
+
+      fit_spline <- lm(y ~ ns(x, degf), data = df_sensor_only)
+      pred_spline <- predict(fit_spline, newdata = list(x =  df_sensor_only$x))
+      corr_spline <- tsens_target - pred_spline
+      tnew_spline <- df_sensor_only$traw - corr_spline
+
+      df <- df %>%
+        mutate(Corr_Factor = corr_spline,
+               LST_driftcorr = tnew_spline)
+
+      return(df)
+    }
+
+  }
+
+
+  # METHOD: LST_DEV
+
+  if(method == "lst_dev") {
+
+    # create new dataframe
+    df_lst_dev <- data.frame(x = tsens,
+                             traw = traw,
+                             abs_time = time,
+                             rel_time=rel_time)
+
+    # check if stability is reached
+
+    df_lst_dev <- df_lst_dev %>%
+      mutate(is_stable = if_else(x <= (min(x) + threshold) & x >= min(x), 1, 0))
+
+    if(sum(df_lst_dev$is_stable == 1) <= 1) {
+      stop("Error: The Sensor does not reach a stable phase. Please check your input data or consider using a higher threshold.")
+    }
+
+    if(sum(df_lst_dev$is_stable == 1) < 5) {
+      paste("Warning: Number of stable temperature recordings is below 5. Please check your input data or consider using a higher threshold.")
+    }
+
+    # check when stability is reached
+
+    stabletime_abs <- df_lst_dev$abs_time[min(which(df_lst_dev$is_stable == 1))]
+
+    stabletime_rel <- df_lst_dev %>%
+      filter(abs_time == stabletime_abs) %>%
+      pull(rel_time)
+
+    timespan_out <- timespan_fun(stabletime_rel)
+
+    message(
+      paste("Sensor stability is reached at", stabletime_abs, "after", timespan_out)
+    )
+
+    # if needed, further prepare dataframe for fitting
+
+    traw_target <- mean(df_lst_dev$traw[df_lst_dev$is_stable == 1])
+    df_lst_dev <- df_lst_dev %>%
+      mutate(y = traw - traw_target)
+
+
+    if(fit == "polynomial") {     # polynomial fitting
+
+      fit_poly <- lm(y ~ poly(x, degf), data = df_lst_dev)
+      pred_poly <- predict(fit_poly, newdata = list(x =  df_lst_dev$x))
+      tnew_poly <- df_lst_dev$traw - pred_poly
+
+      df <- df %>%
+        mutate(Corr_Factor = pred_poly,
+               LST_driftcorr = tnew_poly)
+
+      return(df)
+
+    }
+
+    if(fit == "spline") {     # spline fitting
+
+      fit_spline <- lm(y ~ ns(x, degf), data = df_lst_dev)
+      pred_spline <- predict(fit_spline, newdata = list(x =  df_lst_dev$x))
+      tnew_spline <- df_lst_dev$traw - pred_spline
+
+      df <- df %>%
+        mutate(Corr_Factor = pred_spline,
+               LST_driftcorr = tnew_spline)
+
+      return(df)
+    }
+
+  }
+
+  # METHOD: NEAREST_IMAGE
+
+  if(method == "nearest_image") {
+
+    paste("Not finished yet")
+
+  }
+
+
+}
