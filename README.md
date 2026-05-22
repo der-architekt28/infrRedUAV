@@ -1,6 +1,5 @@
 # infrRedUAV
 
-(--> under development)
 <br>
 A small collection of versatile tools to be used for thermal infrared remote sensing, especially for UAV-based campaigns.
 
@@ -20,7 +19,8 @@ As for the current version, the following functions with their respective workfl
 
    <img width="500" height="375" alt="image" src="https://github.com/user-attachments/assets/6940359e-70c9-4464-bdca-a18372201df2" />
    
-   Figure 1: Acquisition geometries for Apogee® radiometers
+   <i>Figure 1: Acquisition geometries for Apogee® radiometers</i>
+
 <br>
 <br>
  To obtain ground truth data for the surveyed area of interest, a common practice is to place stationary radiometers pointed to the ground. 
@@ -49,6 +49,13 @@ As for the current version, the following functions with their respective workfl
     return(area)
  }
  ```
+Parameters:
+- <b>ang_sfn</b> (numeric):     &nbsp;&nbsp;&nbsp;&nbsp;Angle to surface normal as devation between vertical axis and line of sight. Must be in degrees.
+- <b>ang_half</b> (numeric):    &nbsp;&nbsp;&nbsp;&nbsp;Half angle to surface normal as devation between vertical axis and line of sight. Must be in degrees.
+- <b>h_i</b> (numeric):         &nbsp;&nbsp;&nbsp;&nbsp;Height of the instrument (numeric). Must be in meter.
+- <b>from_model</b> (boolean):  &nbsp;&nbsp;&nbsp;&nbsp;States whether ang_half is derived from 'rm_model'. If TRUE, 'rm_model' must be given. Default = FALSE.
+- <b>rm_model</b> (character):  &nbsp;&nbsp;&nbsp;&nbsp;Radiometer type if the model-specific 'ang_half' is unknown. Allowed inputs are: "SI-111", "SI-121" or "SI-131".
+
 <br>
 <br>
 
@@ -57,7 +64,8 @@ As for the current version, the following functions with their respective workfl
    
    <img width="500" height="200" alt="image" src="https://github.com/user-attachments/assets/5492c235-b9ac-4f65-93f2-fbfa8e4117ee" />
    
-   Figure 2: Example for the internal temperature change observed for a standard UAV-mounted thermal sensor
+   <i>Figure 2: Example for the internal temperature change observed for a standard UAV-mounted thermal sensor</i>
+
 <br>
 <br>
  A well-known source for over- or underestimated temperature values is the instability of thermal imaging sensor during the first phase of operation. 
@@ -66,8 +74,9 @@ As for the current version, the following functions with their respective workfl
  <br>
  In the literature, several methods can be found for compensating for the effects caused by the unstable sensor temperatures. While the distribution of thermal control points across the area of interest
  has been proven to be a reliable approach, the lack of resources or the presence of remote and complex terrain could make it necessary to rely on empirical methods.
- <br>
- <br>
+<br>
+<br>
+
  Usage of the function:
  <br>
  ```
@@ -83,8 +92,18 @@ As for the current version, the following functions with their respective workfl
    return()
  }
 ```
- <br>
- <br>
+Parameters:
+- <b>df</b> (dataframe):     &nbsp;&nbsp;&nbsp;&nbsp;Input table. Must at least include columns for 'col_tsens', 'col_traw' and 'col_time'
+- <b>col_tsens</b> (character):    &nbsp;&nbsp;&nbsp;&nbsp;Name of the column featuring the sensor temperature values. Values must be in degrees Celsius.
+- <b>col_traw</b> (character):         &nbsp;&nbsp;&nbsp;&nbsp;Name of the column featuring the recorded temperature values, usually mean values of single images. Values must be in degrees Celsius.
+- <b>col_time</b> (character):  &nbsp;&nbsp;&nbsp;&nbsp;Name of the column featuring acquisition time stamps. Must be in a recognized datetime format, which is specified by 'datetime_format'.
+- <b>method</b> (character):  &nbsp;&nbsp;&nbsp;&nbsp;Method used to calculate deviations and corrected temperatures. Either "sensor_only" or "lst_dev".
+- <b>fit</b> (character):     &nbsp;&nbsp;&nbsp;&nbsp;Mathematical method used for modelling variable relations. Either "polynomial" or "spline"; default is "spline".
+- <b>degf</b> (numeric):     &nbsp;&nbsp;&nbsp;&nbsp;Degrees of freedom for function fitting. Default is 2. Increase with care to prevent overfitting.
+- <b>threshold</b> (numeric):     &nbsp;&nbsp;&nbsp;&nbsp;Margin from minimum 'tsens' to define interval where 'tsens' is stable. Default is 0.3.
+- <b>datetime_format</b> (character):     &nbsp;&nbsp;&nbsp;&nbsp;Describes format of 'col_time' to the algorithm. Must refer to a recognized datetime format. Common example would be "%Y-%m-%d %H:%M:%S"
+ 
+  <br>
  <br>
  
  ### <b>rad2lst</b>
@@ -118,6 +137,17 @@ rad2lst <- function(trad,
    return()
 }
  ```
+Parameters:
+- <b>trad</b> (numeric)(SpatRaster):     &nbsp;&nbsp;&nbsp;&nbsp;Radiance temperature as single number or raster image.
+- <b>emi</b> (numeric)(SpatRaster):    &nbsp;&nbsp;&nbsp;&nbsp;Surface emissivity as single number or raster image. Must be between 0 and 1.
+- <b>lw_in</b> (numeric)(SpatRaster):         &nbsp;&nbsp;&nbsp;&nbsp;Incoming longwave radiation as single number or raster image. Must be > 0.
+- <b>use_tbg</b> (boolean):  &nbsp;&nbsp;&nbsp;&nbsp;States whether background temperature instead of lw_in is used. If TRUE, 'return_tbg' must be FALSE and 'tbg' must be provided.
+- <b>tbg</b> (character)(SpatRaster):  &nbsp;&nbsp;&nbsp;&nbsp;Background-, also referred to as ambient temperature, as single number or raster image.
+- <b>return_tbg</b> (character):  &nbsp;&nbsp;&nbsp;&nbsp;States whether'tbg' is returned as well when using lw_in. Only possible if 'use_tbg' is FALSE.
+- <b>rast_tol_fact</b> (character):  &nbsp;&nbsp;&nbsp;&nbsp;Applied when computing a minimum tolerance for raster comparison. Only needed if more than 1 input is a raster. Approximate values for orientation are < 0.5 when coordinates are in degree and < 0.001 when in geographical units.
+
+<br>
+<br>
 
 ## Getting Started
 
