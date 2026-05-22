@@ -12,4 +12,5 @@ Imports:
     dplyr,
     lubridate,
     magrittr,
-    terra
+    terra,
+    splines
