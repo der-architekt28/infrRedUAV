@@ -13,4 +13,5 @@ Imports:
     lubridate,
     magrittr,
     terra,
-    splines
+    splines,
+    rlang

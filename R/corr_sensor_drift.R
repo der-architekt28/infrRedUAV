@@ -145,8 +145,8 @@ corr_sensor_drift <- function(df,
 
     if(fit == "polynomial") {     # polynomial fitting
 
-      fit_poly <- lm(y ~ poly(x, degf), data = df_sensor_only)
-      pred_poly <- predict(fit_poly, newdata = list(x =  df_sensor_only$x))
+      fit_poly <- stats::lm(y ~ poly(x, degf), data = df_sensor_only)
+      pred_poly <- stats::predict(fit_poly, newdata = list(x =  df_sensor_only$x))
       corr_poly <- tsens_target - pred_poly
       tnew_poly <- df_sensor_only$traw - corr_poly
 
@@ -161,8 +161,8 @@ corr_sensor_drift <- function(df,
 
     if(fit == "spline") {     # spline fitting
 
-      fit_spline <- lm(y ~ splines::ns(x, degf), data = df_sensor_only)
-      pred_spline <- predict(fit_spline, newdata = list(x =  df_sensor_only$x))
+      fit_spline <- stats::lm(y ~ splines::ns(x, degf), data = df_sensor_only)
+      pred_spline <- stats::predict(fit_spline, newdata = list(x =  df_sensor_only$x))
       corr_spline <- tsens_target - pred_spline
       tnew_spline <- df_sensor_only$traw - corr_spline
 
@@ -224,8 +224,8 @@ corr_sensor_drift <- function(df,
 
     if(fit == "polynomial") {     # polynomial fitting
 
-      fit_poly <- lm(y ~ poly(x, degf), data = df_lst_dev)
-      pred_poly <- predict(fit_poly, newdata = list(x =  df_lst_dev$x))
+      fit_poly <- stats::lm(y ~ poly(x, degf), data = df_lst_dev)
+      pred_poly <- stats::predict(fit_poly, newdata = list(x =  df_lst_dev$x))
       tnew_poly <- df_lst_dev$traw - pred_poly
 
       # add the correction and the corrected temperature as new columns
@@ -240,8 +240,8 @@ corr_sensor_drift <- function(df,
 
     if(fit == "spline") {     # spline fitting
 
-      fit_spline <- lm(y ~ splines::ns(x, degf), data = df_lst_dev)
-      pred_spline <- predict(fit_spline, newdata = list(x =  df_lst_dev$x))
+      fit_spline <- stats::lm(y ~ splines::ns(x, degf), data = df_lst_dev)
+      pred_spline <- stats::predict(fit_spline, newdata = list(x =  df_lst_dev$x))
       tnew_spline <- df_lst_dev$traw - pred_spline
 
       # add the correction and the corrected temperature as new columns
