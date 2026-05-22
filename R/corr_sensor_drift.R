@@ -68,8 +68,12 @@ corr_sensor_drift <- function(df,
     stop("Error: 'method' must be either 'sensor_only' or 'lst_dev'.")
   }
 
-  if(!is.integer(degf)){
-    stop("Error: 'degf' must be an integer.")
+  validate_integer <- function(x, tol = .Machine$double.eps^0.5) {
+    abs(x - round(x)) < tol
+  }
+
+  if(!validate_integer(degf) || degf < 1) {
+    stop("Error: 'degf' must be a positive integer number.")
   }
 
   if(threshold < 0){
