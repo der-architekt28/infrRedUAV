@@ -1,10 +1,34 @@
+#' Correction of temperature values acquired by an unstable thermal camera
+#' Adds the amount of necessary correction and the corrected temperature as new_columns to an existing dataframe
+#'
+#'
+#' `corr_sensor_drift` provides two correction methods to compensate unstable thermal cameras
+#'
+#' @param df Input table (dataframe). Must at least include columns for 'col_tsens', 'col_traw' and 'col_time'
+#' @param col_tsens Name of the column featuring the sensor temperature values (character). Values must be in degrees Celsius
+#' @param col_traw Name of the column featuring the recorded temperature values, usually mean values of single images (character).
+#'                 Values must be in degrees Celsius.
+#' @param col_time Name of the column featuring acquisition time stamps (character).
+#'                 Must be in a recognized datetime format, which is specified by 'datetime_format'
+#' @param method Method used to calculate deviations and corrected temperatures (character). Either "sensor_only" or "lst_dev", see also the README-file
+#' @param fit Mathematical method used for modelling variable relations (character). Either "polynomial" or "spline"; default is "spline"
+#' @param degf Degrees of freedom for function fitting (numeric). Default is 2. Increase with care to prevent overfitting
+#' @param threshold Margin from minimum 'tsens' to define interval where 'tsens' is stable (numeric). Default is 0.3
+#' @param datetime_format Describes format of 'col_time' to the algorithm (character).
+#'                        Must refer to a recognized datetime format. Common example would be "%Y-%m-%d %H:%M:%S"
+#'
+#'
+#' @return Input table with amount of correction and corrected temperature added as new columns
+#'
+#'
+#' @author Lukas Regensburger
+
+
 
 corr_sensor_drift <- function(df,
                        col_tsens,
                        col_traw,
                        col_time,
-                       col_lat=NULL,
-                       col_lon=NULL,
                        method="sensor_only",
                        fit="spline",
                        degf=2,
@@ -18,8 +42,8 @@ corr_sensor_drift <- function(df,
     stop("Error: 'df' must be provided as dataframe object.")
   }
 
-  if(is.null(col_tsens) || is.null(col_time)) {
-    stop("Error: Arguments 'col_tsens' and 'col_time' are required.")
+  if(is.null(col_tsens) || is.null(col_traw) || is.null(col_time)) {
+    stop("Error: Arguments 'col_tsens', 'col_traw' and 'col_time' are required.")
   }
 
   if(is.null(method)) {
@@ -34,7 +58,21 @@ corr_sensor_drift <- function(df,
     stop("Error: Arguments 'col_tsens', 'col_time' and 'method' must be of type character.")
   }
 
-  # maybe to add: check if time is relative or absolute
+  if(!fit %in% c("spline", "polynomial")) {
+    stop("Error: 'fit' must be either 'spline' or 'polynomial'.")
+  }
+
+  if(!method %in% c("sensor_only", "lst_dev")) {
+    stop("Error: 'method' must be either 'sensor_only' or 'lst_dev'.")
+  }
+
+  if(!is.integer(degf)){
+    stop("Error: 'degf' must be an integer.")
+  }
+
+  if(threshold < 0){
+    stop("Error: 'threshold' must be greater than 0.")
+  }
 
   # read arguments, assign variables
 
@@ -53,7 +91,7 @@ corr_sensor_drift <- function(df,
   # function for time until stability
 
   timespan_fun <- function(timespan) {
-    round(timespan)
+    timespan <- round(timespan)
     h <- timespan %/% 3600
     m <- (timespan %% 3600) %/% 60
     s <- timespan %% 60
@@ -75,7 +113,7 @@ corr_sensor_drift <- function(df,
     # check if stability is reached
 
     df_sensor_only <- df_sensor_only %>%
-      mutate(is_stable = if_else(y <= (min(y) + threshold) & y >= min(y), 1, 0))
+      dplyr::mutate(is_stable = dplyr::if_else(y <= (min(y) + threshold) & y >= min(y), 1, 0))
 
     if(sum(df_sensor_only$is_stable == 1) <= 1) {
       stop("Error: The Sensor does not reach a stable phase. Please check your input data or consider using a higher threshold.")
@@ -94,8 +132,8 @@ corr_sensor_drift <- function(df,
     stabletime_abs <- df_sensor_only$abs_time[min(which(df_sensor_only$is_stable == 1))]
 
     stabletime_rel <- df_sensor_only %>%
-      filter(abs_time == stabletime_abs) %>%
-      pull(x)
+      dplyr::filter(abs_time == stabletime_abs) %>%
+      dplyr::pull(x)
 
     timespan_out <- timespan_fun(stabletime_rel)
 
@@ -103,7 +141,7 @@ corr_sensor_drift <- function(df,
       paste("Sensor stability is reached at", stabletime_abs, "after", timespan_out)
     )
 
-    # if needed, further prepare dataframe for fitting
+    # further prepare dataframe for fitting
 
     if(fit == "polynomial") {     # polynomial fitting
 
@@ -112,8 +150,10 @@ corr_sensor_drift <- function(df,
       corr_poly <- tsens_target - pred_poly
       tnew_poly <- df_sensor_only$traw - corr_poly
 
+      # add the correction and the corrected temperature as new columns
+
       df <- df %>%
-        mutate(Corr_Factor = corr_poly,
+        dplyr::mutate(Corr_Factor = corr_poly,
                LST_driftcorr = tnew_poly)
 
       return(df)
@@ -121,13 +161,15 @@ corr_sensor_drift <- function(df,
 
     if(fit == "spline") {     # spline fitting
 
-      fit_spline <- lm(y ~ ns(x, degf), data = df_sensor_only)
+      fit_spline <- lm(y ~ splines::ns(x, degf), data = df_sensor_only)
       pred_spline <- predict(fit_spline, newdata = list(x =  df_sensor_only$x))
       corr_spline <- tsens_target - pred_spline
       tnew_spline <- df_sensor_only$traw - corr_spline
 
+      # add the correction and the corrected temperature as new columns
+
       df <- df %>%
-        mutate(Corr_Factor = corr_spline,
+        dplyr::mutate(Corr_Factor = corr_spline,
                LST_driftcorr = tnew_spline)
 
       return(df)
@@ -149,14 +191,14 @@ corr_sensor_drift <- function(df,
     # check if stability is reached
 
     df_lst_dev <- df_lst_dev %>%
-      mutate(is_stable = if_else(x <= (min(x) + threshold) & x >= min(x), 1, 0))
+      dplyr::mutate(is_stable = dplyr::if_else(x <= (min(x) + threshold) & x >= min(x), 1, 0))
 
     if(sum(df_lst_dev$is_stable == 1) <= 1) {
       stop("Error: The Sensor does not reach a stable phase. Please check your input data or consider using a higher threshold.")
     }
 
     if(sum(df_lst_dev$is_stable == 1) < 5) {
-      paste("Warning: Number of stable temperature recordings is below 5. Please check your input data or consider using a higher threshold.")
+      warning("Warning: Number of stable temperature recordings is below 5. Please check your input data or consider using a higher threshold.")
     }
 
     # check when stability is reached
@@ -164,8 +206,8 @@ corr_sensor_drift <- function(df,
     stabletime_abs <- df_lst_dev$abs_time[min(which(df_lst_dev$is_stable == 1))]
 
     stabletime_rel <- df_lst_dev %>%
-      filter(abs_time == stabletime_abs) %>%
-      pull(rel_time)
+      dplyr::filter(abs_time == stabletime_abs) %>%
+      dplyr::pull(rel_time)
 
     timespan_out <- timespan_fun(stabletime_rel)
 
@@ -177,7 +219,7 @@ corr_sensor_drift <- function(df,
 
     traw_target <- mean(df_lst_dev$traw[df_lst_dev$is_stable == 1])
     df_lst_dev <- df_lst_dev %>%
-      mutate(y = traw - traw_target)
+      dplyr::mutate(y = traw - traw_target)
 
 
     if(fit == "polynomial") {     # polynomial fitting
@@ -186,8 +228,10 @@ corr_sensor_drift <- function(df,
       pred_poly <- predict(fit_poly, newdata = list(x =  df_lst_dev$x))
       tnew_poly <- df_lst_dev$traw - pred_poly
 
+      # add the correction and the corrected temperature as new columns
+
       df <- df %>%
-        mutate(Corr_Factor = pred_poly,
+        dplyr::mutate(Corr_Factor = pred_poly,
                LST_driftcorr = tnew_poly)
 
       return(df)
@@ -196,26 +240,19 @@ corr_sensor_drift <- function(df,
 
     if(fit == "spline") {     # spline fitting
 
-      fit_spline <- lm(y ~ ns(x, degf), data = df_lst_dev)
+      fit_spline <- lm(y ~ splines::ns(x, degf), data = df_lst_dev)
       pred_spline <- predict(fit_spline, newdata = list(x =  df_lst_dev$x))
       tnew_spline <- df_lst_dev$traw - pred_spline
 
+      # add the correction and the corrected temperature as new columns
+
       df <- df %>%
-        mutate(Corr_Factor = pred_spline,
+        dplyr::mutate(Corr_Factor = pred_spline,
                LST_driftcorr = tnew_spline)
 
       return(df)
     }
 
   }
-
-  # METHOD: NEAREST_IMAGE
-
-  if(method == "nearest_image") {
-
-    paste("Not finished yet")
-
-  }
-
 
 }
