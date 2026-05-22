@@ -76,6 +76,65 @@ Parameters:
  has been proven to be a reliable approach, the lack of resources or the presence of remote and complex terrain could make it necessary to rely on empirical methods.
 <br>
 <br>
+ The workflow is as followed:
+ First, it is determined when the sensor temperature reaches a stable phase. This is done regardless of the specified method, but uses the threshold defined by the user.
+ <br>
+ Calculation of relative time in seconds based on the provided absolute time stamps:
+ <img width="787" height="51" alt="image" src="https://github.com/user-attachments/assets/60544a81-ba31-4ce0-a9e7-a717c1abd56f" />
+ <br>
+ The phase of stability is reached, when for the sensor temperature the following applies:
+ <img width="780" height="59" alt="image" src="https://github.com/user-attachments/assets/d7018922-e201-4a92-ab3e-7d08ec40bc1d" />
+ <br>
+ <br>
+ 
+ <b> --> sensor_only</b>
+ <br>
+ 
+ If the method ("sensor_only") is specified, the following algorithm is applied:
+ <br>
+ <br>
+ 
+ The mean value of all T_sens which are proven as stable is considered as target value:
+ <img width="782" height="78" alt="image" src="https://github.com/user-attachments/assets/d1a639ca-17ef-45d6-98c7-3304d36e17df" />
+ <br>
+ <br>
+ With one of two fitting methods, a function is modelled on t_rel:
+ <img width="784" height="48" alt="image" src="https://github.com/user-attachments/assets/5b6888ab-3d63-4988-ba23-3f60c0c70f60" />
+ <br>
+ <br>
+ Subtracting the fitted values from the target value results in the correction value:
+ <img width="788" height="51" alt="image" src="https://github.com/user-attachments/assets/adb99264-71d1-46fd-b97d-18642b6f6441" />
+ <br>
+ <br>
+ The final corrected temperature is calculated as :
+ <img width="783" height="54" alt="image" src="https://github.com/user-attachments/assets/08f7748c-3104-408f-bcb9-8dcf5e6ec82a" />
+
+ <br>
+ <br>
+ <b> --> lst_dev</b>
+ <br>
+ 
+ If the method ("lst_dev") is specified, the following algorithm is applied:
+ <br>
+ <br>
+ 
+ Now, the mean of the observed values during stability is taken:
+ <img width="780" height="84" alt="image" src="https://github.com/user-attachments/assets/385da596-1310-4cf4-9442-677062f4e8a8" />
+ <br>
+ <br>
+ Each observed temperature is subtracted from the target:
+ <img width="781" height="52" alt="image" src="https://github.com/user-attachments/assets/23784b3b-9d60-426c-9abb-0d5039f4c2de" />
+ <br>
+ <br>
+ In contrast to the first method, here the relationship between T_sens and deviation is exploited:
+ <img width="780" height="50" alt="image" src="https://github.com/user-attachments/assets/ba110154-7b9d-40b9-8667-29e441e341f7" />
+ <br>
+ <br>
+ The final corrected temperature is then calculated as:
+ <img width="783" height="55" alt="image" src="https://github.com/user-attachments/assets/ac0bbb9a-99c3-4f4f-9a7a-6a2bb2c3d403" />
+
+<br>
+<br>
 
  Usage of the function:
  <br>
