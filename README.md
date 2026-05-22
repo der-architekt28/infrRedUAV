@@ -163,7 +163,7 @@ Parameters:
 Author: Lukas Regensburger (Universität Würzburg)
 
 ## Version History
-
+* 0.2 
 * 0.1
     * Initial Release
 
