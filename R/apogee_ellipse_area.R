@@ -14,6 +14,8 @@
 #'
 #'
 #' @author Lukas Regensburger
+#'
+#' @export
 
 
 

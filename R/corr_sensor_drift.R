@@ -22,6 +22,8 @@
 #'
 #'
 #' @author Lukas Regensburger
+#'
+#' @export
 
 
 
