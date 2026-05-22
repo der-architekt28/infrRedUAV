@@ -37,6 +37,7 @@ As for the current version, the following functions with their respective workfl
  due to the model specifications and acquisition geometries being well described on the website: https://www.apogeeinstruments.com/field-of-view/
 <br>
 <br>
+
  Usage of the function:
  <br>
  ```
@@ -77,6 +78,8 @@ Parameters:
 <br>
 <br>
  The workflow is as followed:
+ <br>
+ <br>
  First, it is determined when the sensor temperature reaches a stable phase. This is done regardless of the specified method, but uses the threshold defined by the user.
  <br>
  Calculation of relative time in seconds based on the provided absolute time stamps:
@@ -183,6 +186,9 @@ Parameters:
  <br>
     <img width="401" height="93" alt="image" src="https://github.com/user-attachments/assets/e994913e-4b39-49e7-b836-c192a50328df" />
 
+<br>
+<br>
+
 Usage of the function:
 <br>
 ```
@@ -209,6 +215,18 @@ Parameters:
 <br>
 
 ## Getting Started
+
+### Test data
+
+In the directory "test_files"/inst/ext_data" one can find files which can be used for testing the function.
+<br>
+<br>
+When testing "corr_sensor_drift", one may use the following files:
+* survey.csv &nbsp;&nbsp;&nbsp;&nbsp; as input for "df"
+
+When testing "rad2lst", one may use the following files:
+* temperature_raw_uav.tif &nbsp;&nbsp;&nbsp;&nbsp; as input for "trad"
+* emissivity.tif &nbsp;&nbsp;&nbsp;&nbsp; as input for "emi"
 
 ### Dependencies
 
