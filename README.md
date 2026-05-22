@@ -15,7 +15,8 @@ As for the current version, the following functions with their respective workfl
 <br>
 <br>
 
- * <b>apogee_ellipse_area</b>
+ ### <b>apogee_ellipse_area</b>
+  <br>
 
    <img width="500" height="375" alt="image" src="https://github.com/user-attachments/assets/6940359e-70c9-4464-bdca-a18372201df2" />
    
@@ -36,8 +37,23 @@ As for the current version, the following functions with their respective workfl
  due to the model specifications and acquisition geometries being well described on the website: https://www.apogeeinstruments.com/field-of-view/
 <br>
 <br>
+ Usage of the function:
+ <br>
+ ```
+ apogee_ellipse_area <- function( ang_sfn, 
+                                  ang_half=NULL,
+                                  h_i, 
+                                  from_model=FALSE, 
+                                  rm_model=NULL) {      (...)
+      
+    return(area)
+ }
+ ```
 <br>
- * <b>corr_sensor_drift</b>
+<br>
+
+ ### <b>corr_sensor_drift</b>
+ <br>
    
    <img width="500" height="200" alt="image" src="https://github.com/user-attachments/assets/5492c235-b9ac-4f65-93f2-fbfa8e4117ee" />
    
@@ -52,9 +68,26 @@ As for the current version, the following functions with their respective workfl
  has been proven to be a reliable approach, the lack of resources or the presence of remote and complex terrain could make it necessary to rely on empirical methods.
  <br>
  <br>
+ Usage of the function:
+ <br>
+ ```
+ corr_sensor_drift <- function(df,
+                       col_tsens,
+                       col_traw,
+                       col_time,
+                       method="sensor_only",
+                       fit="spline",
+                       degf=2,
+                       threshold=0.3,
+                       datetime_format) {  (...)
+   return()
+ }
+```
+ <br>
+ <br>
  <br>
  
- * <b>rad2lst</b>
+ ### <b>rad2lst</b>
  <br>
  This function allows the transformation between the recorded radiant temperature and the land surface temperature (LST) of the area of interest, which usually marks a crucial step within the post-processing.
  The LST can be calculated from two methods:
@@ -72,8 +105,19 @@ As for the current version, the following functions with their respective workfl
  <br>
     <img width="401" height="93" alt="image" src="https://github.com/user-attachments/assets/e994913e-4b39-49e7-b836-c192a50328df" />
 
-
- 
+Usage of the function:
+<br>
+```
+rad2lst <- function(trad, 
+                    emi, 
+                    lw_in, 
+                    use_tbg=FALSE, 
+                    return_tbg=FALSE, 
+                    tbg=NULL, 
+                    rast_tol_fact=0.1) {   (...)
+   return()
+}
+ ```
 
 ## Getting Started
 
