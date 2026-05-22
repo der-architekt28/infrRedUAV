@@ -1,16 +1,10 @@
 Package: infrRedUAV
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Provides useful functions for UAV-based thermal remote sensing
 Version: 0.1.0
-Authors@R: c(
-    person(
-      "Lukas", "Regensburger",
-      email = "lukas.regensburger@stud-mail.uni-wuerzburg.de"
-    )
-  )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Authors@R: person("Lukas", "Regensburger", , "lukas.regensburger@stud-mail.uni-wuerzburg.de", role = c("aut", "cre"))
+Description: The packages includes tools which may simplify some necessary post processing tasks following thermal remote sensing campaigns.
+License: Open Source, license will be provided soon
 Encoding: UTF-8
 LazyData: true
 Config/roxygen2/version: 8.0.0
